@@ -1,14 +1,15 @@
 package com.erygindmitri.springlibrary.spring_app_library.models;
 
 import com.erygindmitri.springlibrary.spring_app_library.models.enums.Role;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.persistence.*;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 @Entity
 @Table(name = "admins")
-public class Admin {
+public class User implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,18 +32,25 @@ public class Admin {
     joinColumns = @JoinColumn(name = "user_id"))
     @Enumerated(EnumType.STRING)
     private Set<Role> roles = new HashSet<>();
+    //отношение юзера к списку книг
+    @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.DETACH, CascadeType.REFRESH, CascadeType.MERGE},
+            fetch = FetchType.LAZY, mappedBy = "user", orphanRemoval = true)
+    private List<Book> bookList = new ArrayList<>();
 
-    public Admin() {
+    public User() {
     }
 
-    public Admin(Integer id, String name, String email, String password, Image avatar, boolean active) {
+    public User(Integer id, String name, String email, String password, Image avatar, boolean active, Set<Role> roles, List<Book> bookList) {
         this.id = id;
         this.name = name;
         this.email = email;
         this.password = password;
         this.avatar = avatar;
         this.active = active;
+        this.roles = roles;
+        this.bookList = bookList;
     }
+
 
     public Integer getId() {
         return id;
@@ -68,9 +76,6 @@ public class Admin {
         this.email = email;
     }
 
-    public String getPassword() {
-        return password;
-    }
 
     public void setPassword(String password) {
         this.password = password;
@@ -90,5 +95,57 @@ public class Admin {
 
     public void setActive(boolean active) {
         this.active = active;
+    }
+
+    public Set<Role> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(Set<Role> roles) {
+        this.roles = roles;
+    }
+
+    public List<Book> getBookList() {
+        return bookList;
+    }
+
+    public void setBookList(List<Book> bookList) {
+        this.bookList = bookList;
+    }
+
+    //=======================================================
+    //config spring security
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return roles;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    @Override
+    public String getUsername() {
+        return email;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return active;
     }
 }
